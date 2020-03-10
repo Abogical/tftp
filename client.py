@@ -6,6 +6,7 @@ import struct
 from enum import Enum
 from collections import namedtuple
 
+
 class TftpProcessor(object):
     """
     Implements logic for a TFTP server.
@@ -83,6 +84,7 @@ class TftpProcessor(object):
     """
     Close file and exit for a fatal error.
     """
+
     def error(self, err):
         if self.file_obj != None:
             self.file_obj.close()
@@ -97,13 +99,15 @@ class TftpProcessor(object):
         """
         if input_packet.opcode == self.TftpPacketType.ERROR.value:
             # Ignore null byte at the end
-            self.error(Exception(f"Server Error ({input_packet.block}): {input_packet.data[:-1].decode(encoding='ascii')}"))
+            self.error(Exception(
+                f"Server Error ({input_packet.block}): {input_packet.data[:-1].decode(encoding='ascii')}"))
         if self.operation == "pull":
             if input_packet.opcode != self.TftpPacketType.DATA.value:
                 self.error(Exception("Response Error: DATA response expected"))
             if self.block != input_packet.block:
                 # Non-matching block, ignore.
-                self.error(Warning("Response Warning: Non-matching block number. Ignoring."))
+                self.error(
+                    Warning("Response Warning: Non-matching block number. Ignoring."))
             if self.file_obj == None:
                 self.file_obj = open(self.file_name, "wb")
             self.file_obj.write(input_packet.data)
@@ -115,8 +119,6 @@ class TftpProcessor(object):
         if self.operation == "push":
             if input_packet.opcode != self.TftpPacketType.ACK.value:
                 self.error(Exception("Response Error: ACK response expected"))
-
-
 
     def get_next_output_packet(self):
         """
@@ -173,6 +175,7 @@ class TftpProcessor(object):
             'octet'
         ))
 
+
 def check_file_name():
     script_name = os.path.basename(__file__)
     import re
@@ -205,12 +208,14 @@ def parse_user_input(address, operation, file_name=None):
             try:
                 s.send(processor.get_next_output_packet())
                 if processor.has_more_data():
-                    processor.process_udp_packet(s.recv(516 if operation == "pull" else 4), address)
+                    processor.process_udp_packet(
+                        s.recv(516 if operation == "pull" else 4), address)
             except Warning as e:
                 print(f"[WARN] {e.args}")
             except Exception as e:
                 print(f"[FATAL] {e.args}")
                 exit(-1)
+
 
 def get_arg(param_index, default=None):
     """
