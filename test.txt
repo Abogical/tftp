@@ -99,6 +99,7 @@ class TftpProcessor(object):
             # Ignore null byte at the end
             self.error(Exception(f"Server Error ({input_packet.block}): {input_packet.data[:-1].decode(encoding='ascii')}"))
         if self.operation == "pull":
+            print(input_packet)
             if input_packet.opcode != self.TftpPacketType.DATA.value:
                 self.error(Exception("Response Error: DATA response expected"))
             if self.block != input_packet.block:
@@ -108,10 +109,9 @@ class TftpProcessor(object):
                 self.file_obj = open(self.file_name, "wb")
             self.file_obj.write(input_packet.data)
             self.block += 1
-            print(len(input_packet.data))
             if len(input_packet.data) < 512:
                 self.operation = None
-            return struct.pack('!HH', self.TftpPacketType.ACK.value, input_packet.block)
+            return struct.pack('!HH', self.TftpPacketType.ACK.value, self.block)
         if self.operation == "push":
             if input_packet.opcode != self.TftpPacketType.ACK.value:
                 self.error(Exception("Response Error: ACK response expected"))
@@ -205,7 +205,7 @@ def parse_user_input(address, operation, file_name=None):
             try:
                 s.send(processor.get_next_output_packet())
                 if processor.has_more_data():
-                    processor.process_udp_packet(s.recv(516 if operation == "pull" else 4), address)
+                    processor.process_udp_packet(s.recv(514 if operation == "pull" else 4), address)
             except Warning as e:
                 print(f"[WARN] {e.args}")
             except Exception as e:
