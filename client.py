@@ -119,6 +119,17 @@ class TftpProcessor(object):
         if self.operation == "push":
             if input_packet.opcode != self.TftpPacketType.ACK.value:
                 self.error(Exception("Response Error: ACK response expected"))
+            if self.block != input_packet.block:
+                # Non-matching block, ignore.
+                self.error(
+                    Warning("Response Warning: Non-matching block number. Ignoring."))
+            if self.file_obj == None:
+                self.file_obj = open(self.file_name, "rb")
+            data_block = self.file_obj.read(512)
+            if len(data_block) < 512:
+                self.operation = None
+            self.block += 1
+            return struct.pack(f"!HH{len(data_block)}s", self.TftpPacketType.DATA.value, self.block, data_block)
 
     def get_next_output_packet(self):
         """
@@ -168,11 +179,12 @@ class TftpProcessor(object):
         """
         self.operation = "push"
         self.file_name = file_path_on_server
+        self.block = 0
         self.packet_buffer.append(struct.pack(
             f"!H{len(file_path_on_server)}sx{len('octet')}sx",
             self.TftpPacketType.WRQ.value,
             file_path_on_server.encode(encoding='ascii'),
-            'octet'
+            b'octet'
         ))
 
 
