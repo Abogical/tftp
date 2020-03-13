@@ -115,7 +115,6 @@ class TftpProcessor(object):
                 self.file_obj = open(self.file_name, "wb")
             self.file_obj.write(input_packet.data)
             self.block += 1
-            print(len(input_packet.data))
             if len(input_packet.data) < 512:
                 self.operation = None
             return struct.pack('!HH', self.TftpPacketType.ACK.value, input_packet.block)
@@ -218,13 +217,14 @@ def parse_user_input(address, operation, file_name=None):
         print(f"[FATAL] Invalid operation: {operation}")
         exit(-1)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect((address, 69))
+        address = (address, 69)
         while processor.has_pending_packets_to_be_sent():
             try:
-                s.send(processor.get_next_output_packet())
+                s.sendto(processor.get_next_output_packet(), address)
                 if processor.has_more_data():
-                    processor.process_udp_packet(
-                        s.recv(516 if operation == "pull" else 4), address)
+                    data, address = s.recvfrom(
+                        516 if operation == "pull" else 4)
+                    processor.process_udp_packet(data, address)
             except Warning as e:
                 print(f"[WARN] {e.args}")
             except Exception as e:
