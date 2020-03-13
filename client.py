@@ -103,7 +103,10 @@ class TftpProcessor(object):
                 f"Server Error ({input_packet.block}): {input_packet.data[:-1].decode(encoding='ascii')}"))
         if self.operation == "pull":
             if input_packet.opcode != self.TftpPacketType.DATA.value:
-                self.error(Exception("Response Error: DATA response expected"))
+                illegal_operation = "Illegal TFTP operation."
+                return struct.pack(f'!HH{len(illegal_operation)}sx', self.TftpPacketType.ERROR.value, b'\x00\x04',
+                                   illegal_operation.encode(encoding='ascii'))
+                # self.error(Exception("Response Error: DATA response expected"))
             if self.block != input_packet.block:
                 # Non-matching block, ignore.
                 self.error(
